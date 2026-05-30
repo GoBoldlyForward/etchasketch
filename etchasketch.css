@@ -1,0 +1,281 @@
+/*!
+ * etchasketch.css
+ * The look of the classic 1960s toy: a deep red plastic bezel with four
+ * corner screws, two grooved white knobs at the bottom, and a recessed
+ * aluminum-gray drawing surface in the middle.
+ *
+ * The plugin paints inside .etchasketch__canvas; everything else here is
+ * decorative DOM the plugin builds for you.
+ */
+
+.etchasketch {
+  --eas-red:           #c11b15;
+  --eas-red-shade:     #8d0d09;
+  --eas-red-hi:        #df3a31;
+  --eas-red-lo:        #5e0a06;
+  --eas-screen:        #b8b8a9;
+  --eas-screen-hi:     #d6d6c7;
+  --eas-screen-lo:     #8b8b7f;
+  --eas-pen:           #1f1f1f;
+  --eas-knob:          #f4efe6;
+  --eas-knob-shade:    #b3ae9f;
+  --eas-knob-dark:     #807a6d;
+  --eas-screw:         #b8b3a8;
+  --eas-screw-shade:   #6e695f;
+
+  /* @container (not @media) so the toy scales when embedded in a narrow column. */
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  container-type: inline-size;
+  container-name: eas;
+
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #fff;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.etchasketch__frame {
+  position: relative;
+  width: 100%;
+  padding: 36px 36px 120px;
+  border-radius: 22px;
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(255, 255, 255, 0.018) 0 2px,
+      rgba(0, 0, 0, 0.025) 2px 4px),
+    linear-gradient(180deg,
+      var(--eas-red-hi)    0%,
+      var(--eas-red)      28%,
+      var(--eas-red)      72%,
+      var(--eas-red-lo)  100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 22px 42px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+@container eas (max-width: 480px) {
+  .etchasketch__frame {
+    padding: 26px 22px 100px;
+    border-radius: 18px;
+  }
+}
+
+@container eas (max-width: 360px) {
+  .etchasketch__frame {
+    padding: 20px 16px 86px;
+    border-radius: 14px;
+  }
+}
+
+.etchasketch__screw {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, #fff 0%, var(--eas-screw) 55%, var(--eas-screw-shade) 100%);
+  box-shadow:
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+.etchasketch__screw::before,
+.etchasketch__screw::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 1px;
+}
+.etchasketch__screw::before {
+  width: 8px;
+  height: 1.5px;
+  transform: translate(-50%, -50%) rotate(35deg);
+}
+.etchasketch__screw::after {
+  width: 1.5px;
+  height: 8px;
+  transform: translate(-50%, -50%) rotate(35deg);
+}
+
+.etchasketch__screw--tl { top: 12px;    left: 12px;    }
+.etchasketch__screw--tr { top: 12px;    right: 12px;   }
+.etchasketch__screw--bl { bottom: 12px; left: 12px;    }
+.etchasketch__screw--br { bottom: 12px; right: 12px;   }
+
+.etchasketch__screen {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  background:
+    radial-gradient(140% 100% at 50% 0%,
+      var(--eas-screen-hi) 0%,
+      var(--eas-screen)   38%,
+      var(--eas-screen)   65%,
+      var(--eas-screen-lo) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+    inset 0 6px 14px rgba(0, 0, 0, 0.55),
+    inset 0 -2px 6px rgba(255, 255, 255, 0.25),
+    0 1px 0 rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+}
+
+.etchasketch__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+  touch-action: none;
+  outline: none;
+}
+
+.etchasketch--cursor .etchasketch__canvas { cursor: crosshair; }
+
+.etchasketch__canvas:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
+}
+
+.etchasketch--bare {
+  display: block;
+  background: var(--eas-screen, #b8b8a9);
+}
+.etchasketch--bare .etchasketch__canvas { touch-action: none; }
+.etchasketch.etchasketch--bare.etchasketch--cursor .etchasketch__canvas { cursor: crosshair; }
+
+.etchasketch__stamp {
+  position: absolute;
+  bottom: 38px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "Brush Script MT", "Lucida Handwriting", "Apple Chancery", cursive;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: rgba(0, 0, 0, 0.28);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22),
+    0 -1px 0 rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+@container eas (max-width: 480px) {
+  .etchasketch__stamp { bottom: 30px; font-size: 12px; }
+}
+
+@container eas (max-width: 360px) {
+  .etchasketch__stamp { bottom: 24px; font-size: 10px; }
+}
+
+.etchasketch__knob {
+  position: absolute;
+  bottom: 22px;
+  appearance: none;
+  border: none;
+  padding: 0;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 4px rgba(0, 0, 0, 0.25);
+}
+
+.etchasketch__knob--left  { left: 30px;  }
+.etchasketch__knob--right { right: 30px; }
+
+@container eas (max-width: 480px) {
+  .etchasketch__knob { width: 62px; height: 62px; bottom: 18px; }
+  .etchasketch__knob--left  { left: 22px;  }
+  .etchasketch__knob--right { right: 22px; }
+}
+
+@container eas (max-width: 360px) {
+  .etchasketch__knob { width: 50px; height: 50px; bottom: 14px; }
+  .etchasketch__knob--left  { left: 14px; }
+  .etchasketch__knob--right { right: 14px; }
+  .etchasketch__knob-face { inset: 4px; }
+  .etchasketch__knob-face::before { inset: 7px; }
+  .etchasketch__knob-face::after { width: 3px; height: 10px; }
+  .etchasketch__screw { width: 10px; height: 10px; }
+  .etchasketch__screw::before { width: 6px; }
+  .etchasketch__screw::after  { height: 6px; }
+  .etchasketch__screw--tl { top: 8px;    left: 8px;    }
+  .etchasketch__screw--tr { top: 8px;    right: 8px;   }
+  .etchasketch__screw--bl { bottom: 8px; left: 8px;    }
+  .etchasketch__screw--br { bottom: 8px; right: 8px;   }
+}
+
+.etchasketch__knob-face {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg,
+      rgba(0, 0, 0, 0.0) 0deg 7deg,
+      rgba(0, 0, 0, 0.18) 7deg 8deg),
+    radial-gradient(circle at 30% 28%, #ffffff 0%, var(--eas-knob) 38%, var(--eas-knob-shade) 100%);
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.8),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.3);
+  transform-origin: 50% 50%;
+  /* No transition — plugin updates rotation per frame; transitions lag the pen. */
+}
+
+.etchasketch__knob-face::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, #ffffff 0%, var(--eas-knob) 45%, var(--eas-knob-shade) 100%);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.9),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.etchasketch__knob-face::after {
+  content: "";
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--eas-knob-dark);
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.35);
+  transform: translateX(-50%);
+}
+
+.etchasketch__knob:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 3px;
+}
+
+@keyframes etchasketch-shake {
+  0%   { transform: translate(0, 0)      rotate(0deg);     }
+  15%  { transform: translate(-7px, 2px) rotate(-1.4deg);  }
+  30%  { transform: translate(7px, -3px) rotate(1.6deg);   }
+  45%  { transform: translate(-5px, 3px) rotate(-1.1deg);  }
+  60%  { transform: translate(4px, -2px) rotate(0.9deg);   }
+  75%  { transform: translate(-3px, 1px) rotate(-0.6deg);  }
+  100% { transform: translate(0, 0)      rotate(0deg);     }
+}
+
+.etchasketch--shaking {
+  animation: etchasketch-shake 0.6s cubic-bezier(.36, .07, .19, .97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .etchasketch--shaking { animation: none; }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "@goboldlyforward/etchasketch",
+  "version": "1.0.0",
+  "description": "The classic Etch-A-Sketch toy as a drop-in web plugin. Arrow keys spin the knobs and draw on an aluminum-gray screen. Click a knob — or shake your phone — to clear.",
+  "main": "etchasketch.js",
+  "style": "etchasketch.css",
+  "files": [
+    "etchasketch.js",
+    "etchasketch.css",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GoBoldlyForward/etchasketch.git"
+  },
+  "keywords": [
+    "etch-a-sketch",
+    "drawing",
+    "canvas",
+    "toy",
+    "arrow-keys",
+    "interactive",
+    "nostalgia",
+    "css",
+    "javascript"
+  ],
+  "author": "Go Boldly Forward",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/GoBoldlyForward/etchasketch/issues"
+  },
+  "homepage": "https://goboldlyforward.github.io/etchasketch/"
+}

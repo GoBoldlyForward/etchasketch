@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self';">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <title>etchasketch.js — the classic toy as a web plugin</title>
+  <meta name="description" content="The classic Etch-A-Sketch as a drop-in canvas plugin. Arrow keys spin the knobs, the pen follows on a red bezel with an aluminum-gray screen. Click a knob or shake your phone to clear.">
+  <meta name="keywords" content="etch a sketch javascript, etch a sketch web, etch-a-sketch plugin, drawing toy plugin, arrow key drawing canvas, magic screen javascript, retro toy widget, canvas drawing widget, knob-controlled drawing, etch a sketch clone">
+  <meta name="author" content="Go Boldly Forward">
+
+  <link rel="canonical" href="https://goboldlyforward.github.io/etchasketch/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="etchasketch.js — the classic toy as a web plugin">
+  <meta property="og:description" content="The classic Etch-A-Sketch as a drop-in canvas plugin. Arrow keys spin the knobs, the pen follows. Click a knob or shake your phone to clear.">
+  <meta property="og:url" content="https://goboldlyforward.github.io/etchasketch/">
+  <meta property="og:site_name" content="Go Boldly Forward Plugins">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="etchasketch.js — the classic toy as a web plugin">
+  <meta name="twitter:description" content="The classic Etch-A-Sketch as a drop-in canvas plugin. Arrow keys spin the knobs, the pen follows. Click a knob or shake your phone to clear.">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "etchasketch.js",
+    "description": "The classic Etch-A-Sketch as a drop-in canvas plugin. Arrow keys spin the knobs, the pen follows.",
+    "url": "https://goboldlyforward.github.io/etchasketch/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web Browser",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Organization", "name": "Go Boldly Forward", "url": "https://goboldlyforward.com" }
+  }
+  </script>
+
+  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+
+  <link rel="stylesheet" href="etchasketch.css">
+  <link rel="stylesheet" href="demo.css">
+
+  <style>
+    /* ---------- Accent (Etch-A-Sketch red) ---------- */
+    :root {
+      --gbf-accent:      #c11b15;
+      --gbf-accent-soft: rgba(193, 27, 21, 0.10);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) {
+        --gbf-accent:      #ef4444;
+        --gbf-accent-soft: rgba(239, 68, 68, 0.16);
+      }
+    }
+    :root[data-theme="dark"] {
+      --gbf-accent:      #ef4444;
+      --gbf-accent-soft: rgba(239, 68, 68, 0.16);
+    }
+
+    /* h3 inside .gbf-section (sub-headings). */
+    .gbf-section h3 {
+      font-family: var(--gbf-font-sans);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 2.5rem 0 0.75rem;
+    }
+
+    /* Inline code inside .gbf-section prose. */
+    .gbf-section :not(pre) > code {
+      background: var(--gbf-bg-code);
+      border: 1px solid var(--gbf-border);
+      padding: 0.05rem 0.4rem;
+      border-radius: 4px;
+      font: 0.875em var(--gbf-font-mono);
+    }
+
+    /* ─────────────────────────────────────────────────────────────────
+       Playground — toy on the left, controls + live code on the right
+       ───────────────────────────────────────────────────────────────── */
+
+    .play-stage { display: flex; justify-content: center; }
+
+    .play-side {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-width: 0;
+    }
+
+    .controls {
+      background: var(--gbf-bg-elevated);
+      border: 1px solid var(--gbf-border);
+      border-radius: var(--gbf-radius);
+      padding: 1.125rem 1.25rem 0.75rem;
+    }
+    .controls h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gbf-fg-muted);
+      margin: 0 0 0.875rem;
+    }
+    .control {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 0.875rem;
+    }
+    .control__label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--gbf-fg);
+    }
+    .control__value {
+      font: 0.78rem var(--gbf-font-mono);
+      color: var(--gbf-fg-muted);
+    }
+    .control__color {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 36px;
+      padding: 0;
+      border: 1px solid var(--gbf-border-strong);
+      border-radius: var(--gbf-radius);
+      background: var(--gbf-bg);
+      cursor: pointer;
+    }
+    .control__color::-webkit-color-swatch-wrapper { padding: 3px; }
+    .control__color::-webkit-color-swatch { border: none; border-radius: 5px; }
+    .control__color::-moz-color-swatch { border: none; border-radius: 5px; }
+
+    .swatches { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--gbf-border-strong);
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.1s;
+    }
+    .swatch:hover { transform: scale(1.08); }
+    .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--gbf-accent); }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+    }
+    .toggle__label { font-size: 0.875rem; font-weight: 600; color: var(--gbf-fg); }
+    .toggle__hint  { font-size: 0.78rem; color: var(--gbf-fg-muted); margin-top: 2px; }
+    .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch__slider {
+      position: absolute;
+      inset: 0;
+      background: var(--gbf-border-strong);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .switch__slider::before {
+      content: "";
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 18px; height: 18px;
+      background: var(--gbf-bg);
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      transition: transform 0.18s;
+    }
+    .switch input:checked + .switch__slider           { background: var(--gbf-accent); }
+    .switch input:checked + .switch__slider::before   { transform: translateX(18px); }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+      padding-top: 0.875rem;
+      border-top: 1px solid var(--gbf-border);
+    }
+    .actions button {
+      appearance: none;
+      border: 1px solid var(--gbf-border-strong);
+      background: var(--gbf-bg);
+      color: var(--gbf-fg);
+      padding: 0.5rem 0.875rem;
+      border-radius: 999px;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      min-width: 110px;
+    }
+    .actions button.primary {
+      background: var(--gbf-accent);
+      color: var(--gbf-accent-fg);
+      border-color: transparent;
+    }
+    .actions button:hover  { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); }
+    .actions button:active { transform: translateY(1px); }
+
+    /* ---------- Live code panel ---------- */
+
+    .codecard {
+      position: relative;
+      background: var(--gbf-bg-code);
+      border: 1px solid var(--gbf-border);
+      border-radius: var(--gbf-radius);
+      overflow: hidden;
+    }
+    .codecard__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.875rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gbf-fg-muted);
+      background: var(--gbf-bg-elevated);
+      border-bottom: 1px solid var(--gbf-border);
+    }
+    .codecard__copy {
+      appearance: none;
+      border: 1px solid var(--gbf-border-strong);
+      background: var(--gbf-bg);
+      color: var(--gbf-fg);
+      font: 600 0.7rem var(--gbf-font-sans);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: color 0.12s, border-color 0.12s, background 0.12s;
+    }
+    .codecard__copy:hover {
+      color: var(--gbf-accent);
+      border-color: var(--gbf-accent);
+    }
+    .codecard__copy[data-state="copied"] {
+      color: var(--gbf-accent-fg);
+      background: var(--gbf-accent);
+      border-color: var(--gbf-accent);
+    }
+    .codecard pre {
+      margin: 0;
+      padding: 1rem 1.125rem;
+      font: 0.8125rem/1.65 var(--gbf-font-mono);
+      color: var(--gbf-fg);
+      overflow-x: auto;
+      white-space: pre;
+    }
+    /* Light syntax tinting for the live code */
+    .codecard .tk-kw  { color: #c11b15; }
+    .codecard .tk-fn  { color: var(--gbf-fg); font-weight: 600; }
+    .codecard .tk-str { color: #16a34a; }
+    .codecard .tk-num { color: #2563eb; }
+    .codecard .tk-bool{ color: #d97706; font-weight: 600; }
+    .codecard .tk-prop{ color: var(--gbf-fg); }
+    .codecard .tk-comm{ color: var(--gbf-fg-faint); font-style: italic; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) .codecard .tk-kw  { color: #ef4444; }
+      :root:not([data-theme]) .codecard .tk-str { color: #4ade80; }
+      :root:not([data-theme]) .codecard .tk-num { color: #60a5fa; }
+      :root:not([data-theme]) .codecard .tk-bool{ color: #fbbf24; }
+    }
+    :root[data-theme="dark"] .codecard .tk-kw  { color: #ef4444; }
+    :root[data-theme="dark"] .codecard .tk-str { color: #4ade80; }
+    :root[data-theme="dark"] .codecard .tk-num { color: #60a5fa; }
+    :root[data-theme="dark"] .codecard .tk-bool{ color: #fbbf24; }
+
+    /* ---------- Hints under the playground ---------- */
+
+    .play-help {
+      margin-top: 1.25rem;
+      color: var(--gbf-fg-muted);
+      font-size: 0.92rem;
+      max-width: 60ch;
+    }
+    .play-help kbd {
+      display: inline-block;
+      padding: 1px 7px;
+      margin: 0 1px;
+      border-radius: 4px;
+      background: var(--gbf-bg-code);
+      border: 1px solid var(--gbf-border-strong);
+      font: 12px/1.4 var(--gbf-font-mono);
+      color: var(--gbf-fg);
+    }
+
+    /* ---------- Reference tables ---------- */
+
+    .gbf-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.5rem 0 1.25rem;
+      font-size: 0.9375rem;
+    }
+    .gbf-table th,
+    .gbf-table td {
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--gbf-border);
+      vertical-align: top;
+    }
+    .gbf-table th {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gbf-fg-muted);
+    }
+    .gbf-table td code {
+      background: var(--gbf-bg-code);
+      border: 1px solid var(--gbf-border);
+      padding: 0.05rem 0.4rem;
+      border-radius: 4px;
+      font: 0.85em var(--gbf-font-mono);
+    }
+  </style>
+</head>
+<body>
+  <button class="gbf-theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+    <span class="gbf-theme-toggle__icon" aria-hidden="true">☾</span>
+  </button>
+
+  <header class="gbf-header">
+    <div class="gbf-container">
+      <p class="gbf-eyebrow">Plugin</p>
+      <h1 class="gbf-title">etchasketch<span class="gbf-title__accent">.js</span></h1>
+      <p class="gbf-tagline">The classic 1960s toy as a drop-in web plugin. Arrow keys spin the knobs, the pen follows on a red bezel with an aluminum-gray screen. Click a knob — or shake your phone — to clear.</p>
+      <code class="gbf-install">npm install @goboldlyforward/etchasketch</code>
+      <nav class="gbf-nav">
+        <a href="https://github.com/GoBoldlyForward/etchasketch">GitHub</a>
+        <a href="https://www.npmjs.com/package/@goboldlyforward/etchasketch">npm</a>
+        <a href="#install">Docs</a>
+        <a href="https://github.com/GoBoldlyForward/etchasketch/blob/main/CHANGELOG.md">Changelog</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+  <section class="gbf-section">
+    <div class="gbf-container">
+      <p class="gbf-eyebrow gbf-eyebrow--accent">Playground</p>
+      <h2 class="gbf-section__title">Try every knob</h2>
+      <p class="gbf-section__lede">
+        Adjust the controls — the code block updates with the exact options to recreate this configuration. Hit <b>Copy</b> and paste into your project.
+      </p>
+
+      <div class="gbf-stage gbf-stage--split">
+        <div class="play-stage">
+          <div id="toy"></div>
+        </div>
+
+        <div class="play-side">
+          <div class="controls">
+            <h3>Settings</h3>
+
+            <div class="control">
+              <label class="control__label" for="ctrl-pen">
+                <span>Pen color</span>
+                <span class="control__value" id="val-pen">#1f1f1f</span>
+              </label>
+              <input type="color" id="ctrl-pen" class="control__color" value="#1f1f1f">
+            </div>
+
+            <div class="control">
+              <label class="control__label" for="ctrl-width">
+                <span>Pen size</span>
+                <span class="control__value"><span id="val-width">2</span> px</span>
+              </label>
+              <input type="range" id="ctrl-width" class="gbf-range" min="1" max="8" step="0.5" value="2">
+            </div>
+
+            <div class="control">
+              <label class="control__label" for="ctrl-speed">
+                <span>Speed</span>
+                <span class="control__value"><span id="val-speed">1.8</span> px/frame</span>
+              </label>
+              <input type="range" id="ctrl-speed" class="gbf-range" min="0.4" max="5" step="0.1" value="1.8">
+            </div>
+
+            <div class="control">
+              <div class="control__label">
+                <span>Screen color</span>
+                <span class="control__value" id="val-screen">aluminum</span>
+              </div>
+              <div class="swatches" id="ctrl-screen" role="radiogroup" aria-label="Screen color preset">
+                <button type="button" class="swatch" data-color="#b8b8a9" style="background:#b8b8a9" title="Aluminum" aria-pressed="true"></button>
+                <button type="button" class="swatch" data-color="#c8e6c4" style="background:#c8e6c4" title="Mint"></button>
+                <button type="button" class="swatch" data-color="#cfd8e6" style="background:#cfd8e6" title="Sky"></button>
+                <button type="button" class="swatch" data-color="#e6d3c0" style="background:#e6d3c0" title="Sand"></button>
+                <button type="button" class="swatch" data-color="#2a2a2a" style="background:#2a2a2a" title="Slate"></button>
+                <button type="button" class="swatch" data-color="#f4eddb" style="background:#f4eddb" title="Cream"></button>
+              </div>
+            </div>
+
+            <div class="control">
+              <label class="toggle" for="ctrl-cursor">
+                <span>
+                  <span class="toggle__label">Draw with cursor</span>
+                  <span class="toggle__hint">Off = arrow keys only (the classic way)</span>
+                </span>
+                <span class="switch">
+                  <input type="checkbox" id="ctrl-cursor">
+                  <span class="switch__slider"></span>
+                </span>
+              </label>
+            </div>
+
+            <div class="actions">
+              <button type="button" id="btn-clear" class="primary">Clear (shake)</button>
+              <button type="button" id="btn-save">Download PNG</button>
+            </div>
+            <div class="actions" style="border-top: none; padding-top: 0; margin-top: 0.25rem;">
+              <button type="button" id="btn-shake-enable" hidden>Enable phone-shake to clear</button>
+            </div>
+          </div>
+
+          <div class="codecard">
+            <div class="codecard__header">
+              <span>Live code</span>
+              <button type="button" class="codecard__copy" id="btn-copy">Copy</button>
+            </div>
+            <pre><code id="live-code"></code></pre>
+          </div>
+        </div>
+      </div>
+
+      <p class="play-help">
+        Press <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> (or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>) to move the pen — the knobs spin to match.
+        Hold two arrows for diagonals. Click either knob to clear.
+      </p>
+    </div>
+  </section>
+
+  <section class="gbf-section" id="install">
+    <div class="gbf-container">
+      <p class="gbf-eyebrow gbf-eyebrow--accent">Install</p>
+      <h2 class="gbf-section__title">Drop it in</h2>
+      <p class="gbf-section__lede">No build step, no framework — one stylesheet, one script, one container.</p>
+
+      <pre class="gbf-code"><code>&lt;link rel="stylesheet" href="path/to/etchasketch.css"&gt;
+&lt;script src="path/to/etchasketch.js"&gt;&lt;/script&gt;
+
+&lt;div id="toy"&gt;&lt;/div&gt;
+
+&lt;script&gt;
+  const sketch = new EtchASketch('#toy', {
+    penColor:    '#1f1f1f',
+    penWidth:    2,
+    stepPx:      1.8,
+    screenColor: '#b8b8a9',
+  });
+
+  // Live tuning — every option is hot-swappable.
+  sketch.setOptions({ cursor: true });
+&lt;/script&gt;</code></pre>
+
+      <p>
+        <code>new EtchASketch(target, options?)</code> mounts the red bezel + knobs + canvas into <code>target</code> (a selector or element) and starts listening for arrow keys. Mount as many as you like on a page — each is its own instance.
+      </p>
+    </div>
+  </section>
+
+  <section class="gbf-section">
+    <div class="gbf-container">
+      <p class="gbf-eyebrow gbf-eyebrow--accent">Controls</p>
+      <h2 class="gbf-section__title">What every input does</h2>
+      <p class="gbf-section__lede">The left knob is the horizontal axis; the right knob is the vertical axis — just like the real toy.</p>
+
+      <table class="gbf-table">
+        <thead>
+          <tr><th scope="col">Input</th><th scope="col">Effect</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><kbd>→</kbd> / <kbd>D</kbd></td><td>Pen right; <b>left knob spins clockwise</b></td></tr>
+          <tr><td><kbd>←</kbd> / <kbd>A</kbd></td><td>Pen left; <b>left knob spins counterclockwise</b></td></tr>
+          <tr><td><kbd>↓</kbd> / <kbd>S</kbd></td><td>Pen down; <b>right knob spins clockwise</b></td></tr>
+          <tr><td><kbd>↑</kbd> / <kbd>W</kbd></td><td>Pen up; <b>right knob spins counterclockwise</b></td></tr>
+          <tr><td>Hold two arrows</td><td>Diagonal — normalized so it's the same speed as a single arrow</td></tr>
+          <tr><td>Click either knob</td><td>Clear the screen (with shake animation)</td></tr>
+          <tr><td>Shake the phone</td><td>Clear (via <code>DeviceMotionEvent</code>; iOS needs <code>enableShake()</code>)</td></tr>
+          <tr><td>Mouse / touch drag</td><td>Draw — only when <code>cursor: true</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="gbf-section">
+    <div class="gbf-container">
+      <p class="gbf-eyebrow gbf-eyebrow--accent">Reference</p>
+      <h2 class="gbf-section__title">Options</h2>
+      <p class="gbf-section__lede">Pass these at construction, or pass any of them later via <code>setOptions()</code>.</p>
+
+      <pre class="gbf-code"><code>new EtchASketch('#toy', {
+  penColor:          '#1f1f1f',  // CSS color of the line
+  penWidth:          2,          // stroke width in CSS px
+  stepPx:            1.8,        // pen pixels per frame per held arrow
+  screenColor:       '#b8b8a9',  // background fill (defaults to aluminum gray)
+  chrome:            true,       // render the red bezel + knobs (false = headless canvas)
+  cursor:            false,      // allow mouse/touch drag to draw (off = classic mode)
+  shakeToErase:      true,       // listen for devicemotion and clear on a hard shake
+  shakeThreshold:    22,         // accelerometer magnitude required (m/s²)
+  knobsClickToClear: true,       // click either knob to clear
+  knobDegPerPx:      2.2,        // how fast each knob spins per pen pixel
+});</code></pre>
+
+      <h3>Methods</h3>
+      <pre class="gbf-code"><code>sketch.clear();                        // wipe the screen + run the shake animation
+sketch.setOptions({ ... });            // merge + apply (hot-swap any option)
+sketch.getDataURL('image/png');        // PNG data URL of the current drawing
+sketch.enableShake();                  // call from a user gesture on iOS to grant motion access
+sketch.resetPenTo(x, y);               // move the pen without drawing a line
+sketch.destroy();                      // tear down DOM + listeners</code></pre>
+    </div>
+  </section>
+
+  <section class="gbf-section">
+    <div class="gbf-container">
+      <p class="gbf-eyebrow gbf-eyebrow--accent">Recipes</p>
+      <h2 class="gbf-section__title">Cursor mode</h2>
+      <p>
+        By default, only the keyboard moves the pen. That keeps the experience faithful to the original 1960s Magic Screen — and means mouse/touch input on the canvas does nothing. To enable click-drag and finger-drag drawing:
+      </p>
+      <pre class="gbf-code"><code>const sketch = new EtchASketch('#toy', { cursor: true });
+// ...or toggle it later:
+sketch.setOptions({ cursor: true });</code></pre>
+      <p>
+        When <code>cursor: true</code>, the canvas shows a crosshair cursor, the pen jumps to wherever the user presses, and dragging strokes a line that the knobs also follow.
+      </p>
+
+      <h3>Headless mode</h3>
+      <p>
+        Skip the red bezel + knobs entirely and paint the interaction model onto your own design:
+      </p>
+      <pre class="gbf-code"><code>new EtchASketch('#raw', { chrome: false });</code></pre>
+      <p>
+        Your host element gets just the canvas. Arrow keys still draw; <code>cursor: true</code> still enables drag drawing.
+      </p>
+
+      <h3>Phone shake to clear (iOS)</h3>
+      <p>
+        Android and desktop browsers fire <code>devicemotion</code> events without a permission grant — shake works out of the box. iOS 13+ requires a one-time grant tied to a user gesture:
+      </p>
+      <pre class="gbf-code"><code>document.getElementById('btn-enable').addEventListener('click', () => {
+  sketch.enableShake();   // shows the iOS permission dialog
+});</code></pre>
+    </div>
+  </section>
+  </main>
+
+  <footer class="gbf-footer">
+    <div class="gbf-container gbf-footer__row">
+      <span>&copy; <span id="current-year"></span> by <a href="https://morganjlopes.com">Morgan Lopes</a>. <a href="https://www.goboldlyforward.com">Go Boldly Forward!</a></span>
+      <span>v1.0.0 &middot; <a href="https://github.com/GoBoldlyForward/etchasketch">GitHub</a></span>
+    </div>
+  </footer>
+
+  <script src="etchasketch.js"></script>
+  <script>
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+
+    /* ---------- Theme toggle ---------- */
+    (() => {
+      const root = document.documentElement;
+      const toggle = document.querySelector('.gbf-theme-toggle');
+      const icon = toggle.querySelector('.gbf-theme-toggle__icon');
+      const apply = (theme) => {
+        root.setAttribute('data-theme', theme);
+        const isDark = theme === 'dark';
+        icon.textContent = isDark ? '☀' : '☾';
+        toggle.setAttribute('aria-pressed', String(isDark));
+        toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      };
+      const stored = localStorage.getItem('gbf-theme');
+      const initial = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      apply(initial);
+      toggle.addEventListener('click', () => {
+        const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        apply(next);
+        localStorage.setItem('gbf-theme', next);
+      });
+    })();
+
+    /* ---------- The toy ---------- */
+    const DEFAULTS = {
+      penColor:    '#1f1f1f',
+      penWidth:    2,
+      stepPx:      1.8,
+      screenColor: '#b8b8a9',
+      cursor:      false,
+    };
+    const sketch = new EtchASketch('#toy', { ...DEFAULTS });
+
+    /* ---------- Settings state ---------- */
+    const state = { ...DEFAULTS };
+
+    const $ = (id) => document.getElementById(id);
+
+    /* ---------- Live code preview ---------- */
+
+    // Escape HTML so user-typed colors don't break the syntax-highlight markup.
+    const esc = (s) => String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    function formatValue(v) {
+      if (typeof v === 'string') return `<span class="tk-str">'${esc(v)}'</span>`;
+      if (typeof v === 'boolean') return `<span class="tk-bool">${v}</span>`;
+      if (typeof v === 'number') return `<span class="tk-num">${v}</span>`;
+      return esc(String(v));
+    }
+
+    function diffFromDefaults() {
+      const out = {};
+      for (const k of Object.keys(DEFAULTS)) {
+        if (state[k] !== DEFAULTS[k]) out[k] = state[k];
+      }
+      return out;
+    }
+
+    function renderCode() {
+      const diff = diffFromDefaults();
+      const head =
+        `<span class="tk-kw">const</span> sketch = ` +
+        `<span class="tk-kw">new</span> <span class="tk-fn">EtchASketch</span>(` +
+        `<span class="tk-str">'#toy'</span>`;
+      let body;
+      const keys = Object.keys(diff);
+      if (keys.length === 0) {
+        body = `${head});`;
+      } else {
+        // Pad keys so values align (max key length determines column)
+        const w = Math.max(...keys.map(k => k.length));
+        const lines = keys.map(k => {
+          const pad = ' '.repeat(w - k.length);
+          return `  <span class="tk-prop">${esc(k)}</span>:${pad} ${formatValue(diff[k])},`;
+        });
+        body = `${head}, {\n${lines.join('\n')}\n});`;
+      }
+      $('live-code').innerHTML = body;
+    }
+
+    /* ---------- Wire controls ---------- */
+
+    $('ctrl-pen').addEventListener('input', (e) => {
+      state.penColor = e.target.value;
+      sketch.setOptions({ penColor: state.penColor });
+      $('val-pen').textContent = state.penColor;
+      renderCode();
+    });
+
+    $('ctrl-width').addEventListener('input', (e) => {
+      state.penWidth = Number(e.target.value);
+      sketch.setOptions({ penWidth: state.penWidth });
+      $('val-width').textContent = state.penWidth;
+      renderCode();
+    });
+
+    $('ctrl-speed').addEventListener('input', (e) => {
+      state.stepPx = Number(e.target.value);
+      sketch.setOptions({ stepPx: state.stepPx });
+      $('val-speed').textContent = state.stepPx.toFixed(1);
+      renderCode();
+    });
+
+    const swatchNames = {
+      '#b8b8a9': 'aluminum',
+      '#c8e6c4': 'mint',
+      '#cfd8e6': 'sky',
+      '#e6d3c0': 'sand',
+      '#2a2a2a': 'slate',
+      '#f4eddb': 'cream',
+    };
+    document.querySelectorAll('#ctrl-screen .swatch').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#ctrl-screen .swatch')
+          .forEach(b => b.setAttribute('aria-pressed', 'false'));
+        btn.setAttribute('aria-pressed', 'true');
+        state.screenColor = btn.dataset.color;
+        sketch.setOptions({ screenColor: state.screenColor });
+        $('val-screen').textContent = swatchNames[state.screenColor] || state.screenColor;
+        renderCode();
+      });
+    });
+
+    $('ctrl-cursor').addEventListener('change', (e) => {
+      state.cursor = e.target.checked;
+      sketch.setOptions({ cursor: state.cursor });
+      renderCode();
+    });
+
+    $('btn-clear').addEventListener('click', () => sketch.clear());
+
+    $('btn-save').addEventListener('click', () => {
+      const url = sketch.getDataURL();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'etchasketch.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+
+    /* ---------- Copy button ---------- */
+    $('btn-copy').addEventListener('click', async () => {
+      const text = $('live-code').textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        const btn = $('btn-copy');
+        btn.dataset.state = 'copied';
+        btn.textContent = 'Copied ✓';
+        setTimeout(() => {
+          delete btn.dataset.state;
+          btn.textContent = 'Copy';
+        }, 1400);
+      } catch (e) {
+        console.warn('Clipboard write failed', e);
+      }
+    });
+
+    /* ---------- iOS shake permission ---------- */
+    if (typeof DeviceMotionEvent !== 'undefined' &&
+        typeof DeviceMotionEvent.requestPermission === 'function') {
+      const btn = $('btn-shake-enable');
+      btn.hidden = false;
+      btn.addEventListener('click', () => {
+        sketch.enableShake().then(ok => {
+          btn.textContent = ok ? 'Phone-shake enabled ✓' : 'Shake permission denied';
+          btn.disabled = true;
+        });
+      });
+    }
+
+    // Initial render
+    renderCode();
+  </script>
+</body>
+</html>
