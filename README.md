@@ -12,11 +12,22 @@ Drops a faithful Etch-A-Sketch into any container: a red plastic bezel with four
 
 ## Install
 
-For now, download `etchasketch.css` and `etchasketch.js` from this repo. (npm publication pending.)
+```bash
+npm install @goboldlyforward/etchasketch
+```
+
+The script is UMD, so a bundler import works (the CSS ships alongside):
+
+```js
+import EtchASketch from '@goboldlyforward/etchasketch';
+import '@goboldlyforward/etchasketch/etchasketch.css';
+```
+
+Or drop it straight in from a CDN — no build step; the `<script>` exposes the `EtchASketch` global:
 
 ```html
-<link rel="stylesheet" href="path/to/etchasketch.css">
-<script src="path/to/etchasketch.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@goboldlyforward/etchasketch/etchasketch.css">
+<script src="https://unpkg.com/@goboldlyforward/etchasketch/etchasketch.js"></script>
 ```
 
 ## Usage
@@ -127,7 +138,7 @@ HTML, CSS, and ~6KB of JavaScript. No framework, no build step. Uses `<canvas>`,
 - [x] Shake-to-clear via `DeviceMotionEvent` (iOS permission flow included)
 - [x] Headless `chrome: false` mode
 - [x] Demo with full controls panel
-- [ ] Publish to npm (as `@goboldlyforward/etchasketch`)
+- [x] Publish to npm (as `@goboldlyforward/etchasketch`)
 - [ ] Optional `etchasketch-rails` gem wrapper
 - [ ] Save/load drawings to localStorage
 - [ ] Multi-color undo (Magic Screen with layers)
